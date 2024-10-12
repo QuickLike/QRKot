@@ -91,8 +91,11 @@ async def update_charity_project(
         await check_charity_project_name(obj_in, session)
     if obj_in.full_amount is not None:
         check_invested_amount(charity_project, obj_in)
-    return await charity_project_crud.update(
+    updated_project = await charity_project_crud.update(
         charity_project,
         obj_in,
-        session
+        session,
     )
+    await session.commit()
+    await session.refresh(updated_project)
+    return updated_project

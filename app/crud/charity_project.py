@@ -5,7 +5,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.base import CRUDBase
 from app.models.charity_project import CharityProject
-from app.services.google_api import get_strftime
 
 
 class CRUDCharityProject(CRUDBase):
@@ -25,7 +24,7 @@ class CRUDCharityProject(CRUDBase):
     async def get_projects_by_completion_rate(
             session: AsyncSession
     ):
-        projects = (await session.execute(
+        return (await session.execute(
             select(
                 CharityProject.name,
                 CharityProject.description,
@@ -37,17 +36,6 @@ class CRUDCharityProject(CRUDBase):
                 CharityProject.fully_invested == True  # noqa
             ).order_by('time_exceed')
         )).all()
-
-        formatted_projects = [
-            {
-                'name': project.name,
-                'description': project.description,
-                'time_exceed': get_strftime(int(project.time_exceed))
-            }
-            for project in projects
-        ]
-
-        return formatted_projects
 
 
 charity_project_crud = CRUDCharityProject(CharityProject)

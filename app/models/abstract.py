@@ -20,11 +20,12 @@ class CharityDonation(Base):
     close_date = Column(DateTime)
 
     def __repr__(self):
-        return f"""{self.__class__.__name__}
-    {self.id=};
-    {self.full_amount=};
-    {self.invested_amount=};
-    {self.fully_invested=};
-    {self.create_date=};
-    {self.close_date=}.
-    """
+        return (
+            f"{type(self).__name__}:\n"
+            f"{self.id=};\n"
+            f"{self.full_amount=};\n"
+            f"{self.invested_amount=};\n"
+            f"{self.fully_invested=};\n"
+            f"{self.create_date=};\n"
+            f"{self.close_date=}."
+        )

@@ -7,31 +7,57 @@ from app.core.config import settings
 
 FORMAT = '%Y/%m/%d %H:%M:%S'
 
+TABLE_VALUES = [
+    ['Отчет от', ''],
+    ['Топ проектов по скорости закрытия'],
+    ['Название проекта', 'Время сбора', 'Описание']
+]
+TABLE_FIELDS = ('name', 'time_exceed', 'description')
+SPREADSHEET_URL = 'https://docs.google.com/spreadsheets/d/{id}'
 
-async def spreadsheets_create(wrapper_services: Aiogoogle) -> str:
+
+LOCALE = 'ru_RU'
+DEFAULT_SHEET_TITLE = 'Лист1'
+DEFAULT_ROW_COUNT = 100
+DEFAULT_COLUMN_COUNT = 100
+
+SPREADSHEET_BODY_TEMPLATE = {
+    'properties': {
+        'title': '',
+        'locale': LOCALE
+    },
+    'sheets': [{
+        'properties': {
+            'sheetType': 'GRID',
+            'sheetId': 0,
+            'title': DEFAULT_SHEET_TITLE,
+            'gridProperties': {
+                'rowCount': DEFAULT_ROW_COUNT,
+                'columnCount': DEFAULT_COLUMN_COUNT
+            }
+        }
+    }]
+}
+
+
+async def spreadsheets_create(
+        wrapper_services: Aiogoogle,
+        sheet_title=DEFAULT_SHEET_TITLE
+) -> tuple[str, str]:
     now_date_time = datetime.now().strftime(FORMAT)
     service = await wrapper_services.discover('sheets', 'v4')
-    spreadsheet_body = {
-        'properties': {
-            'title': f'Отчет на {now_date_time}',
-            'locale': 'ru_RU'
-        },
-        'sheets': [{
-            'properties': {'sheetType': 'GRID',
-                           'sheetId': 0,
-                           'title': 'Лист1',
-                           'gridProperties': {'rowCount': 100,
-                                              'columnCount': 100}}
-        }]
-    }
+    spreadsheet_body = SPREADSHEET_BODY_TEMPLATE.copy()
+    spreadsheet_body['properties']['title'] = f'Отчет на {now_date_time}'
+    spreadsheet_body['sheets'][0]['properties']['title'] = sheet_title
     response = await wrapper_services.as_service_account(
         service.spreadsheets.create(json=spreadsheet_body)
     )
-    return response['spreadsheetId']
+    spreadsheet_id = response['spreadsheetId']
+    return spreadsheet_id, SPREADSHEET_URL.format(id=spreadsheet_id)
 
 
 async def set_user_permissions(
-        spreadsheetid: str,
+        spreadsheet_id: str,
         wrapper_services: Aiogoogle
 ) -> None:
     permissions_body = {
@@ -42,7 +68,7 @@ async def set_user_permissions(
     service = await wrapper_services.discover('drive', 'v3')
     await wrapper_services.as_service_account(
         service.permissions.create(
-            fileId=spreadsheetid,
+            fileId=spreadsheet_id,
             json=permissions_body,
             fields='id'
         )
@@ -50,35 +76,40 @@ async def set_user_permissions(
 
 
 async def spreadsheets_update_value(
-        spreadsheetid: str,
+        spreadsheet_id: str,
         projects: list,
         wrapper_services: Aiogoogle
 ) -> None:
-    now_date_time = datetime.now().strftime(FORMAT)
-    service = await wrapper_services.discover('sheets', 'v4')
-    table_values = [
-        ['Отчет от', now_date_time],
-        ['Топ проектов по скорости закрытия'],
-        ['Название проекта', 'Время сбора', 'Описание']
+    formatted_projects = [
+        {
+            'name': project.name,
+            'description': project.description,
+            'time_exceed': get_strftime(int(project.time_exceed))
+        }
+        for project in projects
     ]
-    for project in projects:
-        new_row = [
-            str(project['name']),
-            str(project['time_exceed']),
-            str(project['description'])
+    table_values = [
+        *TABLE_VALUES[:],
+        *[
+            [str(project[field]) for field in TABLE_FIELDS]
+            for project in formatted_projects
         ]
-        table_values.append(new_row)
-
-    update_body = {
-        'majorDimension': 'ROWS',
-        'values': table_values
-    }
+    ]
+    table_values[0][1] = datetime.now().strftime(FORMAT)
+    row_count = len(table_values)
+    column_count = max(len(row) for row in table_values)
+    if row_count > 100 or column_count > 100:
+        raise ValueError("Данные выходят за пределы таблицы")
     await wrapper_services.as_service_account(
-        service.spreadsheets.values.update(
-            spreadsheetId=spreadsheetid,
-            range='A1:C100',
+        (await wrapper_services.discover('sheets', 'v4')
+         ).spreadsheets.values.update(
+            spreadsheetId=spreadsheet_id,
+            range=f"R1C1:R{row_count}C{column_count}",
             valueInputOption='USER_ENTERED',
-            json=update_body
+            json={
+                'majorDimension': 'ROWS',
+                'values': table_values
+            }
         )
     )
 

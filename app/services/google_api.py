@@ -92,11 +92,15 @@ async def spreadsheets_update_value(
     table_values[0][1] = datetime.now().strftime(FORMAT)
     row_count = len(table_values)
     column_count = max(map(len, table_values))
-    if (row_count > DEFAULT_ROW_COUNT or
-            column_count > DEFAULT_COLUMN_COUNT):
+    if row_count > DEFAULT_ROW_COUNT:
         raise ValueError(
             "Данные выходят за пределы таблицы."
-            f"{row_count=}; {column_count=}."
+            f"{row_count=} > {DEFAULT_ROW_COUNT}."
+        )
+    if column_count > DEFAULT_COLUMN_COUNT:
+        raise ValueError(
+            "Данные выходят за пределы таблицы."
+            f"{row_count=} > {DEFAULT_COLUMN_COUNT}."
         )
     await wrapper_services.as_service_account(
         (await wrapper_services.discover('sheets', 'v4')

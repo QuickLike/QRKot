@@ -1,3 +1,5 @@
+from http import HTTPStatus
+
 from aiogoogle import Aiogoogle
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -39,7 +41,7 @@ async def get_closed_projects_report(
         )
     except ValueError as e:
         raise HTTPException(
-            status_code=422,
+            status_code=HTTPStatus.UNPROCESSABLE_ENTITY,
             detail=str(e)
         )
     return spreadsheet_url

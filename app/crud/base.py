@@ -46,7 +46,7 @@ class CRUDBase:
             obj_in,
             session: AsyncSession,
             user: User = None,
-            commit=False
+            commit=True
     ) -> list[ModelType]:
         obj_in_data = obj_in.dict()
         if user is not None:
@@ -73,7 +73,7 @@ class CRUDBase:
             db_obj: ModelType,
             obj_in: UpdateSchemaType,
             session: AsyncSession,
-            commit=False
+            commit=True
     ) -> ModelType:
         obj_data = jsonable_encoder(db_obj)
         update_data = obj_in.dict(exclude_unset=True)

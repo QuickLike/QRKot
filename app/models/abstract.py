@@ -21,11 +21,11 @@ class CharityDonation(Base):
 
     def __repr__(self):
         return (
-            f"{type(self).__name__}:\n"
-            f"{self.id=};\n"
-            f"{self.full_amount=};\n"
-            f"{self.invested_amount=};\n"
-            f"{self.fully_invested=};\n"
-            f"{self.create_date=};\n"
-            f"{self.close_date=}."
+            f'{type(self).__name__}:\n'
+            f'{self.id=};\n'
+            f'{self.full_amount=};\n'
+            f'{self.invested_amount=};\n'
+            f'{self.fully_invested=};\n'
+            f'{self.create_date=};\n'
+            f'{self.close_date=}.'
         )

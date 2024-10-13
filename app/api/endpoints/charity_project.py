@@ -46,7 +46,8 @@ async def create_charity_project(
     await check_charity_project_name(charity_project, session)
     new_charity_project = await charity_project_crud.create(
         charity_project,
-        session
+        session,
+        commit=False
     )
     session.add_all(await make_investment(
         new_charity_project,
@@ -95,6 +96,7 @@ async def update_charity_project(
         charity_project,
         obj_in,
         session,
+        False
     )
     await session.commit()
     await session.refresh(updated_project)
